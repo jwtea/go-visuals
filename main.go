@@ -13,10 +13,10 @@ type App struct {
 	Width       int
 	Height      int
 	Canvas      *ebiten.Image
-	Foreground  *ebiten.Image
 	Debug       bool
 	ScaleFactor float32
 	Triangles   Triangles
+	Rotator     float64
 }
 
 type Triangles struct {
@@ -25,9 +25,9 @@ type Triangles struct {
 }
 
 var tri = [][]int{
-	{1, 1},
-	{1, 2},
-	{2, 1},
+	{0, 0},
+	{0, 1},
+	{1, 0},
 }
 
 var ebitenTestVertices = []ebiten.Vertex{
@@ -38,23 +38,23 @@ var ebitenTestVertices = []ebiten.Vertex{
 
 var triIdx = []uint16{0, 1, 2}
 
-var foreground *ebiten.Image
-
-func main() {
-	c := &App{Width: 600, Height: 480, ScaleFactor: 200 / 10, Debug: true}
-
+func (c *App) initTriangles() {
 	//Setup triangles
 	c.Triangles.Verts = c.Conv2DIntToVertex(tri)
 	c.Triangles.Idx = &triIdx
 
 	c.Triangles.Verts = c.ScaleVertexes(200, c.Triangles.Verts)
+}
 
-	log.Printf("Verts: %v", c.Triangles.Verts)
+func main() {
+	c := &App{Width: 600, Height: 480, ScaleFactor: 200 / 10, Debug: true}
+	c.initTriangles()
 
 	img, err := ebiten.NewImage(c.Height, c.Width, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
+	c.Rotator = 0
 
 	c.Canvas = img
 
@@ -66,45 +66,27 @@ func (c *App) update(screen *ebiten.Image) error {
 		return nil
 	}
 
-	fore, _ := ebiten.NewImageFromImage(c.Canvas, ebiten.FilterDefault)
-	c.Foreground = fore
-
-	c.Canvas.Fill(color.RGBA{
-		byte(254),
-		byte(100),
-		byte(0),
-		byte(0xff),
-	})
-
-	if c.Debug == false {
+	if c.Debug == true {
 		c.DrawDebugGrid(5)
 	}
 
-	//Draw lines from vertices
-	// c.DrawTestVertices()
+	DrawLines(c.Canvas, c.Triangles.Verts, c.Triangles.Idx)
 
-	// Draw solid triangle
-	// do := ebiten.DrawTrianglesOptions{}
-	// do.Address = ebiten.AddressClampToZero
+	op := &ebiten.DrawImageOptions{}
 
-	// screen.DrawTriangles(
-	// 	*c.Triangles.Verts,
-	// 	*c.Triangles.Idx,
-	// 	c.Canvas, &do)
-
-	DrawLineTriangle(c.Canvas, c.Triangles.Verts, c.Triangles.Idx)
-	// Rect render
-	// const ox, oy = 40, 60
-	// c.drawRect(c.Foreground, ox, oy, 200, 100, ebiten.AddressClampToZero, "Regular")
+	c.Rotator += 0.1
+	op.GeoM.Rotate(c.Rotator)
+	op.GeoM.Translate(50, 50)
 
 	//Draw image to screen
-	screen.DrawImage(c.Canvas, &ebiten.DrawImageOptions{})
+	screen.DrawImage(c.Canvas, op)
 
 	return nil
 }
+
+// DrawTestVertices use ebiten vertex structure and send to draw line
 func (c *App) DrawTestVertices() {
 	for _, vert := range ebitenTestVertices {
-		log.Printf("Drawing vert:%v", vert)
 		ebitenutil.DrawLine(
 			c.Canvas,
 			float64(vert.SrcX), float64(vert.SrcY),
@@ -131,4 +113,14 @@ func (c *App) DrawDebugGrid(sections int) {
 			float64(c.Width), float64(hO),
 			color.White)
 	}
+}
+
+//FillBackground changes colour of the canvas image in the app
+func (c *App) FillBackground() {
+	c.Canvas.Fill(color.RGBA{
+		byte(254),
+		byte(100),
+		byte(0),
+		byte(0xff),
+	})
 }

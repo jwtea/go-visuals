@@ -90,12 +90,8 @@ func (a *App) drawRect(img *ebiten.Image, x, y, width, height float32, address e
 	ebitenutil.DebugPrintAt(a.Canvas, msg, int(x), int(y)-16)
 }
 
-// DrawLineTriangle use ebitenutil to render a line triangel based on a ebiten vertex slice and indices values
-func DrawLineTriangle(destination *ebiten.Image, verts *[]ebiten.Vertex, indices *[]uint16) {
-
-	if len(*indices)%3 != 0 {
-		panic("len(indices) % 3 must be 0")
-	}
+// DrawLines use ebitenutil to render a line triangel based on a ebiten vertex slice and indices values
+func DrawLines(destination *ebiten.Image, verts *[]ebiten.Vertex, indices *[]uint16) {
 
 	var vPos uint16
 
